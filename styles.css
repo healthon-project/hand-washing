@@ -1,0 +1,107 @@
+/* Custom Styles for UV Handwashing Game */
+
+.font-jua {
+    font-family: 'Jua', 'Noto Sans KR', sans-serif;
+}
+
+/* Custom Small Soapy Circle Eraser Cursor for Canvas */
+.eraser-cursor {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="rgba(56,189,248,0.35)" stroke="%2338bdf8" stroke-width="2.5"/><circle cx="16" cy="16" r="2.5" fill="%23ffffff"/></svg>') 16 16, crosshair;
+}
+
+/* Modal Explicit Visibility Controls (Prevents click blocking) */
+.hidden-modal {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+.show-modal {
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+/* UV Blacklight Glow Effect */
+.uv-active {
+    box-shadow: 0 0 25px rgba(34, 211, 238, 0.4), inset 0 0 15px rgba(168, 85, 247, 0.3);
+}
+
+.uv-glow-text {
+    text-shadow: 0 0 8px rgba(52, 211, 153, 0.8), 0 0 16px rgba(34, 211, 238, 0.6);
+}
+
+/* Step Button Active State */
+.step-btn.active {
+    border-color: rgba(34, 211, 238, 0.8) !important;
+    background-color: rgba(8, 47, 73, 0.8) !important;
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.3) !important;
+}
+
+.step-btn.completed .step-status-icon {
+    color: #10b981 !important;
+}
+
+.step-btn.active .step-num {
+    background-color: #22d3ee !important;
+    color: #0284c7 !important;
+}
+
+/* Water Soap Bubble animation */
+@keyframes floatBubble {
+    0% {
+        transform: translateY(0) scale(0.6);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-80px) scale(1.2);
+        opacity: 0;
+    }
+}
+
+.soap-bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(147, 197, 253, 0.4) 60%, rgba(59, 130, 246, 0.2));
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+    animation: floatBubble 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Warning Shake Animation */
+@keyframes warningShake {
+    0%, 100% { transform: translate(-50%, 0); }
+    20%, 60% { transform: translate(-55%, 0); }
+    40%, 80% { transform: translate(-45%, 0); }
+}
+
+.shake-bubble {
+    animation: warningShake 0.4s ease-in-out;
+}
+
+/* Print Certificate Media Queries */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #result-modal, #result-card-container, #result-card-container * {
+        visibility: visible;
+    }
+    #result-modal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: white !important;
+        color: black !important;
+        display: flex !important;
+    }
+    #result-card-container {
+        border: 4px double #0284c7 !important;
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+    }
+    #close-modal-btn, #retry-btn, #print-btn {
+        display: none !important;
+    }
+}

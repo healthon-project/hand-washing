@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 UV 손씻기 6단계 체험 게임</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col select-none overflow-x-hidden">
+
+    <!-- Minimal Header Section -->
+    <header class="bg-slate-800/90 border-b border-slate-700 backdrop-blur-md sticky top-0 z-40 py-2.5 px-4 shadow-md">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <!-- Title -->
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/30">
+                    <i class="fa-solid fa-hands-bubbles text-base"></i>
+                </div>
+                <h1 class="text-lg md:text-xl font-black tracking-tight text-white font-jua">
+                    스마트 UV 손씻기 6단계
+                </h1>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center space-x-2">
+                <button id="easy-mode-btn" onclick="window.toggleEasyMode()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-graduation-cap text-amber-300"></i>
+                    <span><span id="easy-mode-status-text" class="text-cyan-300">🎯 6단계 실습 모드</span></span>
+                </button>
+                <button id="uv-toggle-btn" onclick="window.toggleUV()" class="px-3 py-1.5 rounded-lg bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-500/50 text-indigo-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-lightbulb text-amber-300 animate-pulse"></i>
+                    <span>UV <span id="uv-status-text" class="text-emerald-400">ON</span></span>
+                </button>
+                <button id="sound-btn" onclick="window.toggleSound()" class="p-1.5 w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 transition flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+                </button>
+                <button id="help-btn" onclick="window.showHelpModal()" class="p-1.5 w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 transition flex items-center justify-center cursor-pointer" title="도움말">
+                    <i class="fa-solid fa-circle-question"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 flex flex-col lg:flex-row gap-4">
+
+        <!-- Center Column: Hand Canvas & Minimal Dashboard -->
+        <section class="flex-1 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex flex-col relative shadow-xl backdrop-blur-sm min-h-[480px]">
+            
+            <!-- Dashboard Bar: Timer & Progress Bar (No duplicate start button) -->
+            <div class="flex items-center justify-between mb-3 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700 flex-wrap gap-2">
+                <!-- Timer Display & Selector -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative flex items-center justify-center w-10 h-10">
+                        <svg class="w-10 h-10 transform -rotate-90">
+                            <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="3.5" class="text-slate-700" fill="transparent" />
+                            <circle id="timer-progress-ring" cx="20" cy="20" r="17" stroke="currentColor" stroke-width="3.5" class="text-cyan-400 stroke-current transition-all duration-300" fill="transparent" stroke-dasharray="106.8" stroke-dashoffset="0" />
+                        </svg>
+                        <span id="timer-text" class="absolute text-xs font-black font-jua text-white">45</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">시간 설정</div>
+                        <div class="flex items-center gap-1 mt-0.5">
+                            <button data-time="45" onclick="window.setTimeDuration(45)" class="time-select-btn active px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-600 text-white cursor-pointer">45초</button>
+                            <button data-time="60" onclick="window.setTimeDuration(60)" class="time-select-btn px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer">60초</button>
+                            <button data-time="30" onclick="window.setTimeDuration(30)" class="time-select-btn px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer">30초</button>
+                            <button data-time="0" onclick="window.setTimeDuration(0)" class="time-select-btn px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer">♾️무제한</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clean Percentage Progress Bar -->
+                <div class="flex-1 max-w-xs mx-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-bold text-cyan-300 flex items-center gap-1">
+                            <i class="fa-solid fa-virus-slash"></i> 세균 제거율
+                        </span>
+                        <span id="clean-percent-text" class="text-sm font-black text-emerald-400 font-jua">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-3 border border-slate-700 overflow-hidden p-0.5 shadow-inner">
+                        <div id="clean-bar" class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full rounded-full transition-all duration-200 w-0 shadow-lg shadow-emerald-500/50"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Mode Switcher (손바닥 / 손등 보기) -->
+            <div class="flex justify-between items-center mb-2 px-1">
+                <div class="flex space-x-1 bg-slate-900/60 p-1 rounded-lg border border-slate-700/60 text-xs">
+                    <button id="view-palm-btn" onclick="window.switchViewMode('palm')" class="px-3 py-1 rounded-md font-bold transition bg-cyan-600 text-white shadow cursor-pointer">
+                        <i class="fa-solid fa-hand"></i> 손바닥 보기
+                    </button>
+                    <button id="view-back-btn" onclick="window.switchViewMode('back')" class="px-3 py-1 rounded-md font-bold transition text-slate-400 hover:text-white cursor-pointer">
+                        <i class="fa-solid fa-hand-back-fist"></i> 손등 보기
+                    </button>
+                </div>
+                <div class="text-xs text-slate-400 flex items-center gap-1.5">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="canvas-interaction-hint">마우스/손가락으로 쓱쓱 문질러 세균을 지우세요!</span>
+                </div>
+            </div>
+
+            <!-- Interactive Canvas Area -->
+            <div class="relative flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80 flex items-center justify-center group shadow-inner" id="canvas-container">
+                <!-- UV Canvas -->
+                <canvas id="hand-canvas" class="eraser-cursor transition-transform duration-100 max-w-full max-h-full object-contain"></canvas>
+
+                <!-- Floating Feedback Notification Bubble -->
+                <div id="feedback-bubble" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-amber-500/90 text-slate-900 px-4 py-2 rounded-full font-bold text-xs shadow-xl flex items-center gap-2 border border-amber-300 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                    <i class="fa-solid fa-triangle-exclamation text-slate-900 text-sm"></i>
+                    <span id="feedback-bubble-text">오염된 영역에 맞는 손씻기 단계를 선택해주세요!</span>
+                </div>
+
+                <!-- Water Bubble Layer -->
+                <div id="bubble-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
+
+                <!-- SINGLE Center Start Overlay Button (가운데 유일한 실습 시작 버튼) -->
+                <div id="start-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center">
+                    <div class="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mb-3 text-3xl animate-bounce">
+                        <i class="fa-solid fa-hand-sparkles"></i>
+                    </div>
+                    <h2 class="text-2xl font-black font-jua text-white mb-2">손씻기 UV 형광 세균 실습</h2>
+                    <p class="text-xs text-slate-300 max-w-md mb-6 leading-relaxed">
+                        올바른 손씻기 6단계를 선택하고 구석구석 세균을 지워보세요!
+                    </p>
+                    <button id="overlay-start-btn" onclick="window.startGame()" class="px-8 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-cyan-500/30 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 font-jua cursor-pointer">
+                        <i class="fa-solid fa-play"></i> <span id="overlay-start-btn-text">45초 실습 시작하기</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Step Instructions Banner -->
+            <div id="active-step-banner" class="mt-3 bg-gradient-to-r from-slate-900 to-indigo-950 p-2.5 rounded-xl border border-cyan-500/30 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-3">
+                    <div id="step-badge" class="w-7 h-7 rounded-lg bg-cyan-500 text-slate-950 font-black flex items-center justify-center text-sm font-jua">1</div>
+                    <div>
+                        <div id="step-title" class="font-bold text-cyan-300 text-sm">1단계: 손바닥과 손바닥을 마주대고 문질러요</div>
+                        <div id="step-desc" class="text-slate-300 text-[11px]">손바닥 중앙과 손가락 면의 기본 세균을 쓱쓱 문질러 지우세요.</div>
+                    </div>
+                </div>
+                <div id="step-target-tag" class="px-2.5 py-1 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[11px] font-bold">
+                    Target: 손바닥
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: 6 Steps Selector Menu -->
+        <section class="w-full lg:w-80 flex flex-col">
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-sm flex-1">
+                <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-cyan-400"></i> 손씻기 6단계 선택
+                    </span>
+                </h3>
+
+                <div class="grid grid-cols-1 gap-2" id="steps-grid">
+                    <!-- Step 1 Button -->
+                    <button data-step="1" onclick="window.gameStarted ? window.selectStep(1) : window.startGame(1)" class="step-btn active p-2.5 rounded-xl border border-cyan-500/50 bg-cyan-950/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <span class="step-num w-7 h-7 rounded-lg bg-cyan-500 text-slate-950 font-black flex items-center justify-center text-xs font-jua">1</span>
+                            <div>
+                                <div class="text-xs font-bold text-white group-hover:text-cyan-300">1단계: 손바닥 닦기</div>
+                                <div class="text-[10px] text-slate-400">손바닥 마주 대고 문지르기</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
+                    </button>
+
+                    <!-- Step 2 Button -->
+                    <button data-step="2" onclick="window.gameStarted ? window.selectStep(2) : window.startGame(2)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">2</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-200 group-hover:text-cyan-300">2단계: 손등 닦기</div>
+                                <div class="text-[10px] text-slate-400">손등과 손바닥 대고 문지르기</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
+                    </button>
+
+                    <!-- Step 3 Button -->
+                    <button data-step="3" onclick="window.gameStarted ? window.selectStep(3) : window.startGame(3)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">3</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-200 group-hover:text-cyan-300">3단계: 손가락 사이</div>
+                                <div class="text-[10px] text-slate-400">손깍지 끼고 손가락 사이 닦기</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
+                    </button>
+
+                    <!-- Step 4 Button -->
+                    <button data-step="4" onclick="window.gameStarted ? window.selectStep(4) : window.startGame(4)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">4</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-200 group-hover:text-cyan-300">4단계: 두 손 모아 닦기</div>
+                                <div class="text-[10px] text-slate-400">손가락 마주 잡고 문지르기</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
+                    </button>
+
+                    <!-- Step 5 Button -->
+                    <button data-step="5" onclick="window.gameStarted ? window.selectStep(5) : window.startGame(5)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">5</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-200 group-hover:text-cyan-300">5단계: 엄지손가락</div>
+                                <div class="text-[10px] text-slate-400">엄지손가락 돌려가며 닦기</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
+                    </button>
+
+                    <!-- Step 6 Button -->
+                    <button data-step="6" onclick="window.gameStarted ? window.selectStep(6) : window.startGame(6)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">6</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-200 group-hover:text-cyan-300">6단계: 손톱 밑 닦기</div>
+                                <div class="text-[10px] text-slate-400">손가락 끝을 반대편 손바닥에 문지르기</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
+                    </button>
+
+                    <!-- Step 7 Button -->
+                    <button data-step="7" onclick="window.gameStarted ? window.selectStep(7) : window.startGame(7)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">7</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-200 group-hover:text-cyan-300">7단계: 손목 씻기</div>
+                                <div class="text-[10px] text-slate-400">손목 부위를 돌려가며 닦기</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Result Certificate Modal -->
+    <div id="result-modal" style="display: none;" class="hidden-modal fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative transform scale-95 transition-transform duration-300" id="result-card-container">
+            <button id="close-modal-btn" onclick="window.hideResultModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="inline-block p-3 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950 mb-3 shadow-lg shadow-amber-400/30">
+                    <i class="fa-solid fa-award text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-black font-jua text-white tracking-wide">손씻기 왕 인증서</h2>
+                <p class="text-xs text-slate-400 mt-1">스마트 UV 손씻기 6단계 실습 과정 완료</p>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 mb-6">
+                <div class="grid grid-cols-2 gap-4 text-center divide-x divide-slate-700">
+                    <div>
+                        <div class="text-xs text-slate-400 mb-1">최종 세균 제거율</div>
+                        <div id="final-clean-rate" class="text-3xl font-black text-emerald-400 font-jua">98%</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 mb-1">소요 시간 / 평가</div>
+                        <div id="final-rating" class="text-xl font-bold text-amber-300 font-jua">⭐⭐⭐ 완벽함!</div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-700/80 text-xs grid grid-cols-2 gap-2 text-slate-300" id="final-zone-list"></div>
+            </div>
+            <div class="text-center text-xs text-slate-300 mb-6 bg-cyan-950/40 border border-cyan-500/30 p-3 rounded-xl">
+                <p id="final-eval-msg" class="leading-relaxed font-medium">
+                    👏 축하합니다! 6단계를 완벽히 준수하여 세균을 완전히 제거했습니다.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button id="retry-btn" onclick="window.hideResultModal(); window.startGame();" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold text-sm transition font-jua cursor-pointer">
+                    <i class="fa-solid fa-rotate-left mr-1.5"></i> 다시 도전하기
+                </button>
+                <button id="print-btn" onclick="window.print()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-500/20 transition font-jua cursor-pointer">
+                    <i class="fa-solid fa-download mr-1.5"></i> 인증서 다운로드
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" style="display: none;" class="hidden-modal fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl relative text-xs">
+            <button id="close-help-btn" onclick="window.hideHelpModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-base font-bold text-white font-jua mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-circle-question text-cyan-400"></i> 게임 이용 안내
+            </h3>
+            <ol class="list-decimal list-inside space-y-2 text-slate-300 leading-relaxed mb-4">
+                <li><strong class="text-cyan-300">[실습 시작하기]</strong> 버튼을 누르면 타이머가 시작됩니다.</li>
+                <li>오른쪽의 <strong class="text-cyan-300">1~6단계 버튼</strong>을 하나씩 선택하세요.</li>
+                <li>해당 단계에 맞는 손 부위를 마우스나 손가락으로 문지르면 세균이 지워집니다.</li>
+            </ol>
+            <button id="confirm-help-btn" onclick="window.hideHelpModal()" class="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition cursor-pointer">
+                확인했습니다
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Files with Cache Busting -->
+    <script src="js/audio.js?v=1.0.8"></script>
+    <script src="js/steps.js?v=1.0.8"></script>
+    <script src="js/canvas.js?v=1.0.8"></script>
+    <script src="js/app.js?v=1.0.8"></script>
+</body>
+</html>
