@@ -611,21 +611,23 @@
             const isClasped = (this.activeZone === 'knuckles');
             if (!isClasped) return { drawX: p.x, drawY: p.y };
 
-            const rubAnim = this.isRubbing ? Math.sin(Date.now() * 0.03) * 16 : 0;
+            const rubAnim = this.isRubbing ? Math.sin(Date.now() * 0.03) * 14 : 0;
+            if (p.zone === 'knuckles') {
+                return { drawX: p.x + rubAnim, drawY: p.y };
+            }
             if (p.x < 300) {
-                const dx = p.x - 165; const dy = p.y - 360; const rot = 0.35;
-                const rdx = dx * Math.cos(rot) - dy * Math.sin(rot);
-                const rdy = dx * Math.sin(rot) + dy * Math.cos(rot);
-                return { drawX: (265 + rubAnim) + rdx, drawY: 360 + rdy };
+                return { drawX: p.x + 80 + rubAnim, drawY: p.y };
             } else {
-                const dx = p.x - 435; const dy = p.y - 360; const rot = -0.35;
-                const rdx = dx * Math.cos(rot) - dy * Math.sin(rot);
-                const rdy = dx * Math.sin(rot) + dy * Math.cos(rot);
-                return { drawX: (335 - rubAnim) + rdx, drawY: 360 + rdy };
+                return { drawX: p.x - 80 - rubAnim, drawY: p.y };
             }
         }
 
         drawHandVector() {
+            if (this.activeZone === 'knuckles') {
+                this.drawClaspedHandsPath();
+                return;
+            }
+
             this.ctx.save();
             const skinGrad = this.ctx.createLinearGradient(150, 100, 450, 600);
             if (this.uvLightOn) { skinGrad.addColorStop(0, '#312e81'); skinGrad.addColorStop(1, '#0f172a'); }
@@ -633,32 +635,9 @@
             this.ctx.fillStyle = skinGrad; this.ctx.strokeStyle = this.uvLightOn ? '#38bdf8' : '#ca8a04';
             this.ctx.lineWidth = 5; this.ctx.lineJoin = 'round'; this.ctx.lineCap = 'round';
 
-            const isClasped = (this.activeZone === 'knuckles');
-            const rubAnim = (isClasped && this.isRubbing) ? Math.sin(Date.now() * 0.03) * 16 : 0;
-
-            if (isClasped) {
-                // Center contact glowing aura
-                this.ctx.save();
-                const auraGrad = this.ctx.createRadialGradient(300, 320, 15, 300, 320, 140);
-                auraGrad.addColorStop(0, 'rgba(34, 211, 238, 0.45)');
-                auraGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.2)');
-                auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                this.ctx.fillStyle = auraGrad;
-                this.ctx.beginPath();
-                this.ctx.arc(300, 320, 140, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.restore();
-            }
-
-            const leftX = isClasped ? (265 + rubAnim) : 165;
-            const rightX = isClasped ? (335 - rubAnim) : 435;
-            const leftRot = isClasped ? 0.35 : 0;
-            const rightRot = isClasped ? -0.35 : 0;
-
             // Left Hand
             this.ctx.save();
-            this.ctx.translate(leftX, 360);
-            if (leftRot) this.ctx.rotate(leftRot);
+            this.ctx.translate(165, 360);
             this.ctx.scale(0.72, 0.72);
             this.ctx.translate(-300, -370);
             this.drawSingleHandPath();
@@ -666,33 +645,111 @@
 
             // Right Hand
             this.ctx.save();
-            this.ctx.translate(rightX, 360);
-            if (rightRot) this.ctx.rotate(rightRot);
+            this.ctx.translate(435, 360);
             this.ctx.scale(-0.72, 0.72);
             this.ctx.translate(-300, -370);
             this.drawSingleHandPath();
             this.ctx.restore();
 
-            if (isClasped) {
-                // Prominent Clasped Badge Label
-                this.ctx.save();
-                this.ctx.fillStyle = 'rgba(8, 145, 178, 0.92)';
-                this.ctx.strokeStyle = '#22d3ee';
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                if (typeof this.ctx.roundRect === 'function') {
-                    this.ctx.roundRect(175, 25, 250, 38, 19);
-                } else {
-                    this.ctx.rect(175, 25, 250, 38);
-                }
-                this.ctx.fill();
-                this.ctx.stroke();
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.font = 'bold 16px "Jua", sans-serif';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('👐 두 손 모아 씻는 자세', 300, 50);
-                this.ctx.restore();
+            this.ctx.restore();
+        }
+
+        drawClaspedHandsPath() {
+            this.ctx.save();
+            const rubAnim = this.isRubbing ? Math.sin(Date.now() * 0.03) * 14 : 0;
+
+            // Skin gradient
+            const skinGrad = this.ctx.createLinearGradient(150, 100, 450, 600);
+            if (this.uvLightOn) { skinGrad.addColorStop(0, '#312e81'); skinGrad.addColorStop(1, '#0f172a'); }
+            else { skinGrad.addColorStop(0, '#fef08a'); skinGrad.addColorStop(1, '#eab308'); }
+            this.ctx.fillStyle = skinGrad; this.ctx.strokeStyle = this.uvLightOn ? '#38bdf8' : '#ca8a04';
+            this.ctx.lineWidth = 5; this.ctx.lineJoin = 'round'; this.ctx.lineCap = 'round';
+
+            // Center glow aura behind clasped hands
+            this.ctx.save();
+            const auraGrad = this.ctx.createRadialGradient(300 + rubAnim, 320, 20, 300 + rubAnim, 320, 160);
+            auraGrad.addColorStop(0, 'rgba(34, 211, 238, 0.55)');
+            auraGrad.addColorStop(0.6, 'rgba(14, 165, 233, 0.22)');
+            auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            this.ctx.fillStyle = auraGrad;
+            this.ctx.beginPath();
+            this.ctx.arc(300 + rubAnim, 320, 160, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.restore();
+
+            this.ctx.save();
+            this.ctx.translate(rubAnim, 0);
+
+            // Combined silhouette of clasped/interlocked hands
+            this.ctx.beginPath();
+            this.ctx.moveTo(190, 670);
+            this.ctx.lineTo(190, 520);
+            this.ctx.quadraticCurveTo(140, 440, 150, 350); // Left thumb bump
+            this.ctx.quadraticCurveTo(160, 260, 220, 200); // Left knuckle curve
+            this.ctx.quadraticCurveTo(300, 150, 380, 200); // Top interlocked fingers arch
+            this.ctx.quadraticCurveTo(440, 260, 450, 350); // Right knuckle curve
+            this.ctx.quadraticCurveTo(460, 440, 410, 520); // Right thumb bump
+            this.ctx.lineTo(410, 670); // Right wrist
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.stroke();
+
+            // Inner Detail Lines: Interlocked Folded Knuckles
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = this.uvLightOn ? 'rgba(56, 189, 248, 0.9)' : 'rgba(202, 138, 4, 0.9)';
+            this.ctx.lineWidth = 4;
+
+            // Folded finger joint 1 (Index)
+            this.ctx.moveTo(215, 240);
+            this.ctx.quadraticCurveTo(270, 210, 300, 250);
+            this.ctx.quadraticCurveTo(330, 210, 385, 240);
+
+            // Folded finger joint 2 (Middle)
+            this.ctx.moveTo(205, 290);
+            this.ctx.quadraticCurveTo(270, 260, 300, 300);
+            this.ctx.quadraticCurveTo(330, 260, 395, 290);
+
+            // Folded finger joint 3 (Ring)
+            this.ctx.moveTo(200, 340);
+            this.ctx.quadraticCurveTo(270, 310, 300, 350);
+            this.ctx.quadraticCurveTo(330, 310, 400, 340);
+
+            // Folded finger joint 4 (Pinky)
+            this.ctx.moveTo(205, 390);
+            this.ctx.quadraticCurveTo(270, 360, 300, 400);
+            this.ctx.quadraticCurveTo(330, 360, 395, 390);
+
+            // Center interlocking seam line
+            this.ctx.moveTo(300, 200);
+            this.ctx.quadraticCurveTo(295, 300, 300, 420);
+
+            // Thumbs tucked inwards
+            this.ctx.moveTo(150, 350);
+            this.ctx.quadraticCurveTo(190, 380, 210, 420);
+            this.ctx.moveTo(450, 350);
+            this.ctx.quadraticCurveTo(410, 380, 390, 420);
+
+            this.ctx.stroke();
+            this.ctx.restore();
+
+            // Prominent Clasped Badge Header
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(8, 145, 178, 0.95)';
+            this.ctx.strokeStyle = '#22d3ee';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            if (typeof this.ctx.roundRect === 'function') {
+                this.ctx.roundRect(140, 20, 320, 44, 22);
+            } else {
+                this.ctx.rect(140, 20, 320, 44);
             }
+            this.ctx.fill();
+            this.ctx.stroke();
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 18px "Jua", sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('👐 4단계: 두 손을 모아서 씻는 자세', 300, 48);
+            this.ctx.restore();
 
             this.ctx.restore();
         }
