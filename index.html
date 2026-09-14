@@ -607,6 +607,24 @@
             this.ctx.fillStyle = bgGrad; this.ctx.fillRect(0, 0, this.width, this.height);
         }
 
+        getTransformedParticlePos(p) {
+            const isClasped = (this.activeZone === 'knuckles');
+            if (!isClasped) return { drawX: p.x, drawY: p.y };
+
+            const rubAnim = this.isRubbing ? Math.sin(Date.now() * 0.03) * 16 : 0;
+            if (p.x < 300) {
+                const dx = p.x - 165; const dy = p.y - 360; const rot = 0.35;
+                const rdx = dx * Math.cos(rot) - dy * Math.sin(rot);
+                const rdy = dx * Math.sin(rot) + dy * Math.cos(rot);
+                return { drawX: (265 + rubAnim) + rdx, drawY: 360 + rdy };
+            } else {
+                const dx = p.x - 435; const dy = p.y - 360; const rot = -0.35;
+                const rdx = dx * Math.cos(rot) - dy * Math.sin(rot);
+                const rdy = dx * Math.sin(rot) + dy * Math.cos(rot);
+                return { drawX: (335 - rubAnim) + rdx, drawY: 360 + rdy };
+            }
+        }
+
         drawHandVector() {
             this.ctx.save();
             const skinGrad = this.ctx.createLinearGradient(150, 100, 450, 600);
@@ -616,12 +634,26 @@
             this.ctx.lineWidth = 5; this.ctx.lineJoin = 'round'; this.ctx.lineCap = 'round';
 
             const isClasped = (this.activeZone === 'knuckles');
-            const rubAnim = (isClasped && this.isRubbing) ? Math.sin(Date.now() * 0.025) * 12 : 0;
+            const rubAnim = (isClasped && this.isRubbing) ? Math.sin(Date.now() * 0.03) * 16 : 0;
 
-            const leftX = isClasped ? (165 + 85 + rubAnim) : 165;
-            const rightX = isClasped ? (435 - 85 - rubAnim) : 435;
-            const leftRot = isClasped ? 0.20 : 0;
-            const rightRot = isClasped ? -0.20 : 0;
+            if (isClasped) {
+                // Center contact glowing aura
+                this.ctx.save();
+                const auraGrad = this.ctx.createRadialGradient(300, 320, 15, 300, 320, 140);
+                auraGrad.addColorStop(0, 'rgba(34, 211, 238, 0.45)');
+                auraGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.2)');
+                auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                this.ctx.fillStyle = auraGrad;
+                this.ctx.beginPath();
+                this.ctx.arc(300, 320, 140, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.restore();
+            }
+
+            const leftX = isClasped ? (265 + rubAnim) : 165;
+            const rightX = isClasped ? (335 - rubAnim) : 435;
+            const leftRot = isClasped ? 0.35 : 0;
+            const rightRot = isClasped ? -0.35 : 0;
 
             // Left Hand
             this.ctx.save();
@@ -641,6 +673,27 @@
             this.drawSingleHandPath();
             this.ctx.restore();
 
+            if (isClasped) {
+                // Prominent Clasped Badge Label
+                this.ctx.save();
+                this.ctx.fillStyle = 'rgba(8, 145, 178, 0.92)';
+                this.ctx.strokeStyle = '#22d3ee';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                if (typeof this.ctx.roundRect === 'function') {
+                    this.ctx.roundRect(175, 25, 250, 38, 19);
+                } else {
+                    this.ctx.rect(175, 25, 250, 38);
+                }
+                this.ctx.fill();
+                this.ctx.stroke();
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = 'bold 16px "Jua", sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('👐 두 손 모아 씻는 자세', 300, 50);
+                this.ctx.restore();
+            }
+
             this.ctx.restore();
         }
 
@@ -658,24 +711,16 @@
 
         drawUVGermParticles() {
             const time = Date.now() * 0.003;
-            const isClasped = (this.activeZone === 'knuckles');
-            const rubAnim = (isClasped && this.isRubbing) ? Math.sin(Date.now() * 0.025) * 12 : 0;
-
             this.particles.forEach(p => {
                 if (!p.active) return;
                 if (this.viewMode === 'palm' && p.zone === 'back') return;
                 if (this.viewMode === 'back' && p.zone === 'palm') return;
                 const pulse = Math.sin(time + p.glowOffset) * 1.5;
 
-                let drawX = p.x;
-                let drawY = p.y;
-                if (isClasped) {
-                    if (p.x < 300) drawX = p.x + 85 + rubAnim;
-                    else drawX = p.x - 85 - rubAnim;
-                }
+                const pos = this.getTransformedParticlePos(p);
 
                 this.ctx.save(); this.ctx.beginPath();
-                this.ctx.arc(drawX, drawY, Math.max(1, p.size + pulse), 0, Math.PI * 2);
+                this.ctx.arc(pos.drawX, pos.drawY, Math.max(1, p.size + pulse), 0, Math.PI * 2);
                 this.ctx.fillStyle = p.colorType === 'neon-green' ? 'rgba(52, 211, 153, 0.85)' : 'rgba(34, 211, 238, 0.85)';
                 this.ctx.fill(); this.ctx.restore();
             });
@@ -717,19 +762,12 @@
                 const res = this.onScrubCallback(zone, x, y);
                 if (res && res.allowed) {
                     const scrubRadius = 85; let erased = false;
-                    const isClasped = (this.activeZone === 'knuckles');
-                    const rubAnim = (isClasped && this.isRubbing) ? Math.sin(Date.now() * 0.025) * 12 : 0;
 
                     this.particles.forEach(p => {
                         if (!p.active) return;
-                        let drawX = p.x;
-                        let drawY = p.y;
-                        if (isClasped) {
-                            if (p.x < 300) drawX = p.x + 85 + rubAnim;
-                            else drawX = p.x - 85 - rubAnim;
-                        }
+                        const pos = this.getTransformedParticlePos(p);
 
-                        if (Math.hypot(drawX - x, drawY - y) <= scrubRadius && p.zone === zone) {
+                        if (Math.hypot(pos.drawX - x, pos.drawY - y) <= scrubRadius && p.zone === zone) {
                             p.active = false; this.zonesData[zone].cleared++; erased = true;
                         }
                     });
