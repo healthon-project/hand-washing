@@ -20,66 +20,80 @@ function initGameApp() {
     if (window.gameAppInitialized) return;
     window.gameAppInitialized = true;
 
-    // 1. Initialize Canvas Engine
-    canvasEngine = new HandCanvasEngine('hand-canvas', 'canvas-container');
-    window.canvasEngine = canvasEngine;
-
-    // 2. Connect Canvas Callbacks
-    canvasEngine.onScrubCallback = (zoneKey, x, y) => {
-        if (!window.gameStarted) {
-            window.startGame();
+    try {
+        const EngineClass = window.HandCanvasEngine || (typeof HandCanvasEngine !== 'undefined' ? HandCanvasEngine : null);
+        if (EngineClass) {
+            canvasEngine = new EngineClass('hand-canvas', 'canvas-container');
+            window.canvasEngine = canvasEngine;
+        } else {
+            console.error('HandCanvasEngine class is not loaded yet.');
         }
-        sounds.playScrubSound();
+    } catch (err) {
+        console.error('Failed to instantiate HandCanvasEngine:', err);
+    }
 
-        if (window.easyMode) {
-            const autoStepId = getStepIdForZone(zoneKey);
-            if (autoStepId && autoStepId !== window.currentStepId) {
-                window.selectStep(autoStepId);
+    if (canvasEngine) {
+        // 2. Connect Canvas Callbacks
+        canvasEngine.onScrubCallback = (zoneKey, x, y) => {
+            if (!window.gameStarted) {
+                window.startGame();
+            }
+            if (window.sounds) window.sounds.playScrubSound();
+
+            if (window.easyMode) {
+                const autoStepId = window.getStepIdForZone ? window.getStepIdForZone(zoneKey) : getStepIdForZone(zoneKey);
+                if (autoStepId && autoStepId !== window.currentStepId) {
+                    window.selectStep(autoStepId);
+                }
+                return { allowed: true };
+            }
+
+            const allowed = window.isZoneAllowedInStep ? window.isZoneAllowedInStep(zoneKey, window.currentStepId, false) : isZoneAllowedInStep(zoneKey, window.currentStepId, false);
+            if (!allowed) {
+                if (window.sounds) window.sounds.playWarningSound();
+                const warnMsg = window.getStepWarningMessage ? window.getStepWarningMessage(zoneKey) : getStepWarningMessage(zoneKey);
+                window.showFeedback(warnMsg, true);
+                return { allowed: false };
             }
             return { allowed: true };
-        }
+        };
 
-        const allowed = isZoneAllowedInStep(zoneKey, window.currentStepId, false);
-        if (!allowed) {
-            sounds.playWarningSound();
-            const warnMsg = getStepWarningMessage(zoneKey);
-            window.showFeedback(warnMsg, true);
-            return { allowed: false };
-        }
-        return { allowed: true };
-    };
+        canvasEngine.onProgressUpdateCallback = (percent, zonesData) => {
+            window.cleanPercent = percent;
+            const cleanPercentText = document.getElementById('clean-percent-text');
+            const cleanBar = document.getElementById('clean-bar');
+            if (cleanPercentText) cleanPercentText.textContent = `${percent}%`;
+            if (cleanBar) cleanBar.style.width = `${percent}%`;
 
-    canvasEngine.onProgressUpdateCallback = (percent, zonesData) => {
-        window.cleanPercent = percent;
-        const cleanPercentText = document.getElementById('clean-percent-text');
-        const cleanBar = document.getElementById('clean-bar');
-        if (cleanPercentText) cleanPercentText.textContent = `${percent}%`;
-        if (cleanBar) cleanBar.style.width = `${percent}%`;
-
-        // Check step completion (Relaxed threshold: 30% clean clears step)
-        Object.keys(zonesData).forEach(zk => {
-            const zd = zonesData[zk];
-            if (zd && zd.count > 0) {
-                const sId = getStepIdForZone(zk);
-                const reqThreshold = 0.30;
-                if ((zd.cleared / zd.count) >= reqThreshold) {
-                    window.markStepCompleted(sId);
+            // Check step completion (Relaxed threshold: 30% clean clears step)
+            Object.keys(zonesData).forEach(zk => {
+                const zd = zonesData[zk];
+                if (zd && zd.count > 0) {
+                    const sId = window.getStepIdForZone ? window.getStepIdForZone(zk) : getStepIdForZone(zk);
+                    const reqThreshold = 0.30;
+                    if ((zd.cleared / zd.count) >= reqThreshold) {
+                        window.markStepCompleted(sId);
+                    }
                 }
-            }
-        });
+            });
 
-        if (window.cleanPercent >= 100 && window.gameStarted) {
-            window.endGame(true);
+            if (window.cleanPercent >= 100 && window.gameStarted) {
+                window.endGame(true);
+            }
+        };
+
+        canvasEngine.setViewMode('palm');
+        const stepsConfig = window.HANDWASHING_STEPS || HANDWASHING_STEPS;
+        if (stepsConfig && stepsConfig[1]) {
+            canvasEngine.setActiveZone(stepsConfig[1].targetZone);
         }
-    };
+    }
 
     // Bind event listeners as secondary backup
     bindUIEventListeners();
 
     window.hideResultModal();
     window.hideHelpModal();
-    canvasEngine.setViewMode('palm');
-    canvasEngine.setActiveZone(HANDWASHING_STEPS[1].targetZone);
 
     setTimeout(() => {
         if (canvasEngine) canvasEngine.initCanvasSize();
@@ -142,8 +156,8 @@ window.startGame = function(initialStep = 1) {
         const stepBtns = document.querySelectorAll('.step-btn');
 
         if (startOverlay) {
-            startOverlay.style.display = 'none';
-            startOverlay.classList.add('hidden-modal');
+            startOverlay.style.cssText = 'display: none !important; opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; z-index: -10 !important;';
+            startOverlay.classList.add('hidden-modal', 'hidden');
         }
         if (startBtnLabel) startBtnLabel.textContent = '실습 재시작';
         window.hideResultModal();
@@ -218,9 +232,9 @@ window.selectStep = function(stepId) {
     const config = HANDWASHING_STEPS[window.currentStepId];
     if (!config) return;
 
-    if (config.requiredView === 'back' && canvasEngine.viewMode !== 'back') {
+    if (config.requiredView === 'back' && canvasEngine && canvasEngine.viewMode !== 'back') {
         window.switchViewMode('back');
-    } else if (config.requiredView === 'palm' && canvasEngine.viewMode !== 'palm') {
+    } else if (config.requiredView === 'palm' && canvasEngine && canvasEngine.viewMode !== 'palm') {
         window.switchViewMode('palm');
     }
 

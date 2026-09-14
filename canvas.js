@@ -721,3 +721,7 @@ class HandCanvasEngine {
     }
 }
 
+if (typeof window !== 'undefined') {
+    window.HandCanvasEngine = HandCanvasEngine;
+}
+

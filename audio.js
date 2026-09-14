@@ -183,3 +183,7 @@ class SoundEffects {
 }
 
 const sounds = new SoundEffects();
+if (typeof window !== 'undefined') {
+    window.SoundEffects = SoundEffects;
+    window.sounds = sounds;
+}

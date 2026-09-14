@@ -132,3 +132,10 @@ function getStepWarningMessage(zoneKey) {
             return '⚠️ 해당 영역에 맞는 올바른 손씻기 단계를 선택해주세요!';
     }
 }
+
+if (typeof window !== 'undefined') {
+    window.HANDWASHING_STEPS = HANDWASHING_STEPS;
+    window.getStepIdForZone = getStepIdForZone;
+    window.isZoneAllowedInStep = isZoneAllowedInStep;
+    window.getStepWarningMessage = getStepWarningMessage;
+}
