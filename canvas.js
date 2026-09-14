@@ -520,7 +520,7 @@ class HandCanvasEngine {
             });
         } else if (this.activeZone === 'wrist') {
             this.ctx.beginPath();
-            this.ctx.roundRect ? this.ctx.roundRect(190, 560, 220, 90, 15) : this.ctx.rect(190, 560, 220, 90);
+            this.ctx.rect(190, 560, 220, 90);
             this.ctx.fill();
             this.ctx.stroke();
         } else if (this.activeZone === 'palm' && this.viewMode === 'palm') {
