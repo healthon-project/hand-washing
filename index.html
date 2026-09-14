@@ -2,23 +2,103 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>스마트 UV 손씻기 6단계 체험 게임</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        .font-jua { font-family: 'Jua', 'Noto Sans KR', sans-serif; }
+        
+        .eraser-cursor {
+            cursor: crosshair;
+            touch-action: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-user-select: none !important;
+            user-select: none !important;
+        }
+
+        #hand-canvas {
+            touch-action: none !important;
+            -webkit-touch-callout: none !important;
+        }
+
+        #start-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(3, 7, 18, 0.88);
+            backdrop-filter: blur(4px);
+            z-index: 35;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            text-align: center;
+            touch-action: manipulation !important;
+            pointer-events: auto !important;
+        }
+
+        .hidden-modal, #start-overlay.hidden-modal, #start-overlay.hidden {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+            z-index: -10 !important;
+        }
+
+        .show-modal {
+            display: flex !important;
+            pointer-events: auto !important;
+        }
+
+        .step-btn.active {
+            border-color: rgba(34, 211, 238, 0.8) !important;
+            background-color: rgba(8, 47, 73, 0.8) !important;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.3) !important;
+        }
+
+        .step-btn.completed .step-status-icon {
+            color: #10b981 !important;
+        }
+
+        .step-btn.active .step-num {
+            background-color: #22d3ee !important;
+            color: #0284c7 !important;
+        }
+
+        @keyframes floatBubble {
+            0% { transform: translateY(0) scale(0.6); opacity: 0.8; }
+            100% { transform: translateY(-80px) scale(1.2); opacity: 0; }
+        }
+
+        .soap-bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(147, 197, 253, 0.4) 60%, rgba(59, 130, 246, 0.2));
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+            animation: floatBubble 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes warningShake {
+            0%, 100% { transform: translate(-50%, 0); }
+            20%, 60% { transform: translate(-55%, 0); }
+            40%, 80% { transform: translate(-45%, 0); }
+        }
+
+        .shake-bubble { animation: warningShake 0.4s ease-in-out; }
+    </style>
 </head>
 <body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col select-none overflow-x-hidden">
 
     <!-- Minimal Header Section -->
     <header class="bg-slate-800/90 border-b border-slate-700 backdrop-blur-md sticky top-0 z-40 py-2.5 px-4 shadow-md">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            <!-- Title -->
             <div class="flex items-center space-x-2">
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/30">
                     <i class="fa-solid fa-hands-bubbles text-base"></i>
@@ -28,7 +108,6 @@
                 </h1>
             </div>
 
-            <!-- Action Controls -->
             <div class="flex items-center space-x-2">
                 <button id="easy-mode-btn" onclick="window.toggleEasyMode()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-graduation-cap text-amber-300"></i>
@@ -54,9 +133,7 @@
         <!-- Center Column: Hand Canvas & Minimal Dashboard -->
         <section class="flex-1 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex flex-col relative shadow-xl backdrop-blur-sm min-h-[480px]">
             
-            <!-- Dashboard Bar: Timer & Progress Bar (No duplicate start button) -->
             <div class="flex items-center justify-between mb-3 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700 flex-wrap gap-2">
-                <!-- Timer Display & Selector -->
                 <div class="flex items-center space-x-3">
                     <div class="relative flex items-center justify-center w-10 h-10">
                         <svg class="w-10 h-10 transform -rotate-90">
@@ -76,7 +153,6 @@
                     </div>
                 </div>
 
-                <!-- Clean Percentage Progress Bar -->
                 <div class="flex-1 max-w-xs mx-3">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-xs font-bold text-cyan-300 flex items-center gap-1">
@@ -90,7 +166,6 @@
                 </div>
             </div>
 
-            <!-- View Mode Switcher (손바닥 / 손등 보기) -->
             <div class="flex justify-between items-center mb-2 px-1">
                 <div class="flex space-x-1 bg-slate-900/60 p-1 rounded-lg border border-slate-700/60 text-xs">
                     <button id="view-palm-btn" onclick="window.switchViewMode('palm')" class="px-3 py-1 rounded-md font-bold transition bg-cyan-600 text-white shadow cursor-pointer">
@@ -108,20 +183,17 @@
 
             <!-- Interactive Canvas Area -->
             <div class="relative flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80 flex items-center justify-center group shadow-inner min-h-[350px] sm:min-h-[420px]" id="canvas-container">
-                <!-- UV Canvas -->
                 <canvas id="hand-canvas" class="eraser-cursor transition-transform duration-100 max-w-full max-h-full object-contain"></canvas>
 
-                <!-- Floating Feedback Notification Bubble -->
                 <div id="feedback-bubble" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-amber-500/90 text-slate-900 px-4 py-2 rounded-full font-bold text-xs shadow-xl flex items-center gap-2 border border-amber-300 opacity-0 pointer-events-none transition-all duration-300 z-30">
                     <i class="fa-solid fa-triangle-exclamation text-slate-900 text-sm"></i>
                     <span id="feedback-bubble-text">오염된 영역에 맞는 손씻기 단계를 선택해주세요!</span>
                 </div>
 
-                <!-- Water Bubble Layer -->
                 <div id="bubble-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
 
-                <!-- SINGLE Center Start Overlay Button (가운데 유일한 실습 시작 버튼) -->
-                <div id="start-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-4 sm:p-6 text-center">
+                <!-- SINGLE Center Start Overlay Button -->
+                <div id="start-overlay">
                     <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mb-2 sm:mb-3 text-2xl sm:text-3xl animate-bounce">
                         <i class="fa-solid fa-hand-sparkles"></i>
                     </div>
@@ -160,7 +232,6 @@
                 </h3>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2" id="steps-grid">
-                    <!-- Step 1 Button -->
                     <button data-step="1" onclick="window.gameStarted ? window.selectStep(1) : window.startGame(1)" class="step-btn active p-2.5 rounded-xl border border-cyan-500/50 bg-cyan-950/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <span class="step-num w-7 h-7 rounded-lg bg-cyan-500 text-slate-950 font-black flex items-center justify-center text-xs font-jua">1</span>
@@ -172,7 +243,6 @@
                         <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
                     </button>
 
-                    <!-- Step 2 Button -->
                     <button data-step="2" onclick="window.gameStarted ? window.selectStep(2) : window.startGame(2)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">2</span>
@@ -184,7 +254,6 @@
                         <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
                     </button>
 
-                    <!-- Step 3 Button -->
                     <button data-step="3" onclick="window.gameStarted ? window.selectStep(3) : window.startGame(3)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">3</span>
@@ -196,7 +265,6 @@
                         <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
                     </button>
 
-                    <!-- Step 4 Button -->
                     <button data-step="4" onclick="window.gameStarted ? window.selectStep(4) : window.startGame(4)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">4</span>
@@ -208,7 +276,6 @@
                         <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
                     </button>
 
-                    <!-- Step 5 Button -->
                     <button data-step="5" onclick="window.gameStarted ? window.selectStep(5) : window.startGame(5)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">5</span>
@@ -220,7 +287,6 @@
                         <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
                     </button>
 
-                    <!-- Step 6 Button -->
                     <button data-step="6" onclick="window.gameStarted ? window.selectStep(6) : window.startGame(6)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">6</span>
@@ -232,7 +298,6 @@
                         <i class="fa-solid fa-circle-check text-slate-600 step-status-icon text-sm"></i>
                     </button>
 
-                    <!-- Step 7 Button -->
                     <button data-step="7" onclick="window.gameStarted ? window.selectStep(7) : window.startGame(7)" class="step-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <span class="step-num w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-black flex items-center justify-center text-xs font-jua">7</span>
@@ -310,10 +375,558 @@
         </div>
     </div>
 
-    <!-- JavaScript Files with Cache Busting -->
-    <script src="js/audio.js?v=2.0.0"></script>
-    <script src="js/steps.js?v=2.0.0"></script>
-    <script src="js/canvas.js?v=2.0.0"></script>
-    <script src="js/app.js?v=2.0.0"></script>
+    <!-- Self-Contained JavaScript Engines -->
+    <script>
+    /* Audio Engine */
+    class SoundEffects {
+        constructor() { this.ctx = null; this.enabled = true; this.lastSplashTime = 0; }
+        init() {
+            try {
+                if (!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (AC) this.ctx = new AC();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    const p = this.ctx.resume();
+                    if (p && typeof p.catch === 'function') p.catch(() => {});
+                }
+            } catch (e) {}
+        }
+        toggleSound() { this.enabled = !this.enabled; return this.enabled; }
+        playScrubSound() {
+            if (!this.enabled) return;
+            try {
+                this.init(); if (!this.ctx) return;
+                const now = Date.now(); if (now - this.lastSplashTime < 120) return;
+                this.lastSplashTime = now;
+                const bs = this.ctx.sampleRate * 0.08;
+                const buf = this.ctx.createBuffer(1, bs, this.ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < bs; i++) d[i] = Math.random() * 2 - 1;
+                const n = this.ctx.createBufferSource(); n.buffer = buf;
+                const f = this.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 800 + Math.random() * 600; f.Q.value = 3;
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(0.15, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                n.connect(f); f.connect(g); g.connect(this.ctx.destination); n.start();
+            } catch (e) {}
+        }
+        playStepChime() {
+            if (!this.enabled) return;
+            try {
+                this.init(); if (!this.ctx) return;
+                const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(659.25, this.ctx.currentTime + 0.1);
+                osc.frequency.exponentialRampToValueAtTime(783.99, this.ctx.currentTime + 0.2);
+                g.gain.setValueAtTime(0.2, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+                osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.35);
+            } catch (e) {}
+        }
+        playWarningSound() {
+            if (!this.enabled) return;
+            try {
+                this.init(); if (!this.ctx) return;
+                const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(160, this.ctx.currentTime); osc.frequency.setValueAtTime(130, this.ctx.currentTime + 0.08);
+                g.gain.setValueAtTime(0.18, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+            } catch (e) {}
+        }
+        playVictorySound() {
+            if (!this.enabled) return;
+            try {
+                this.init(); if (!this.ctx) return;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                    osc.type = 'triangle'; osc.frequency.value = freq;
+                    const st = this.ctx.currentTime + idx * 0.12;
+                    g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(0.25, st + 0.04); g.gain.exponentialRampToValueAtTime(0.001, st + 0.4);
+                    osc.connect(g); g.connect(this.ctx.destination); osc.start(st); osc.stop(st + 0.4);
+                });
+            } catch (e) {}
+        }
+        playSwitchSound() {
+            if (!this.enabled) return;
+            try {
+                this.init(); if (!this.ctx) return;
+                const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, this.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.05);
+                g.gain.setValueAtTime(0.15, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.05);
+            } catch (e) {}
+        }
+    }
+    const sounds = new SoundEffects();
+    window.sounds = sounds;
+
+    /* Handwashing Steps Data */
+    const HANDWASHING_STEPS = {
+        1: { id: 1, title: '1단계: 손바닥과 손바닥을 마주대고 문질러요', shortTitle: '1단계: 손바닥 닦기', desc: '손바닥 중앙과 기본 면의 세균을 쓱쓱 문질러 지우세요.', targetZone: 'palm', targetLabel: '손바닥', requiredView: 'palm' },
+        2: { id: 2, title: '2단계: 손등과 손바닥을 마주대고 문질러요', shortTitle: '2단계: 손등 닦기', desc: '손등 넓은 면을 쓱쓱 닦아 손등의 UV 형광 세균을 지우세요.', targetZone: 'back', targetLabel: '손등', requiredView: 'back' },
+        3: { id: 3, title: '3단계: 손깍지를 끼고 손가락 사이를 문질러요', shortTitle: '3단계: 손가락 사이 닦기', desc: '손가락 사이 사이 틈새 오염을 정밀하게 닦아내세요.', targetZone: 'webbing', targetLabel: '손가락 사이', requiredView: 'both' },
+        4: { id: 4, title: '4단계: 두 손을 모아 손가락을 문질러요', shortTitle: '4단계: 두 손 모아 닦기', desc: '손가락 마디 뒷면과 굽혀지는 부분을 집중적으로 문지릅니다.', targetZone: 'knuckles', targetLabel: '손가락 마디', requiredView: 'back' },
+        5: { id: 5, title: '5단계: 엄지손가락을 다른 편 손바닥으로 돌려주며 문질러요', shortTitle: '5단계: 엄지손가락 닦기', desc: '오염되기 쉬운 엄지손가락 전체를 돌려가며 닦아주세요.', targetZone: 'thumb', targetLabel: '엄지손가락', requiredView: 'both' },
+        6: { id: 6, title: '6단계: 손톱을 반대편 손바닥에 문질러 세균을 지워요', shortTitle: '6단계: 손톱 밑 닦기', desc: '세균이 90% 집중되는 손톱 밑! 손가락 끝을 꼼꼼하게 문지르세요.', targetZone: 'nails', targetLabel: '손톱 밑', requiredView: 'both' },
+        7: { id: 7, title: '7단계: 손목까지 돌려서 깨끗하게 씻어요', shortTitle: '7단계: 손목 씻기', desc: '손씻기의 완성! 손목 아래쪽 부위를 깨끗하게 둘러가며 닦아줍니다.', targetZone: 'wrist', targetLabel: '손목', requiredView: 'both' }
+    };
+    window.HANDWASHING_STEPS = HANDWASHING_STEPS;
+
+    function getStepIdForZone(k) {
+        switch(k) { case 'palm': return 1; case 'back': return 2; case 'webbing': return 3; case 'knuckles': return 4; case 'thumb': return 5; case 'nails': return 6; case 'wrist': return 7; default: return 1; }
+    }
+    function isZoneAllowedInStep(k, s, e) {
+        if (e) return true;
+        const cfg = HANDWASHING_STEPS[s];
+        return cfg ? (cfg.targetZone === k) : false;
+    }
+    function getStepWarningMessage(k) {
+        switch(k) {
+            case 'nails': return '⚠️ 손톱 밑 세균은 [6단계: 손톱 밑 닦기]를 선택해야 지워집니다!';
+            case 'thumb': return '⚠️ 엄지손가락 세균은 [5단계: 엄지 닦기]를 선택해야 지워집니다!';
+            case 'webbing': return '⚠️ 손가락 사이 세균은 [3단계: 손가락 사이]를 선택해야 지워집니다!';
+            case 'knuckles': return '⚠️ 손가락 마디 세균은 [4단계: 두 손 모아 닦기]를 선택해야 지워집니다!';
+            case 'back': return '⚠️ 손등 세균은 [2단계: 손등 닦기]를 선택해야 지워집니다!';
+            case 'wrist': return '⚠️ 손목 세균은 [7단계: 손목 씻기]를 선택해야 지워집니다!';
+            default: return '⚠️ 해당 영역에 맞는 올바른 손씻기 단계를 선택해주세요!';
+        }
+    }
+    window.getStepIdForZone = getStepIdForZone; window.isZoneAllowedInStep = isZoneAllowedInStep; window.getStepWarningMessage = getStepWarningMessage;
+
+    /* Hand Canvas Engine */
+    class HandCanvasEngine {
+        constructor(canvasId, containerId) {
+            this.canvas = document.getElementById(canvasId);
+            this.container = document.getElementById(containerId);
+            this.ctx = this.canvas.getContext('2d');
+            this.viewMode = 'palm'; this.uvLightOn = true; this.isRubbing = false; this.activeZone = 'palm';
+            this.width = 600; this.height = 700;
+            this.particles = [];
+            this.zonesData = { palm:{count:0,cleared:0,label:'손바닥'}, back:{count:0,cleared:0,label:'손등'}, webbing:{count:0,cleared:0,label:'손가락 사이'}, knuckles:{count:0,cleared:0,label:'손가락 마디'}, thumb:{count:0,cleared:0,label:'엄지손가락'}, nails:{count:0,cleared:0,label:'손톱 밑'}, wrist:{count:0,cleared:0,label:'손목'} };
+            this.initCanvasSize();
+            window.addEventListener('resize', () => this.initCanvasSize());
+            window.addEventListener('orientationchange', () => setTimeout(() => this.initCanvasSize(), 150));
+            requestAnimationFrame(() => this.initCanvasSize());
+            this.bindInputEvents();
+        }
+
+        initCanvasSize() {
+            if (!this.container || !this.canvas) return;
+            const rect = this.container.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            let containerW = rect.width || Math.min(window.innerWidth - 32, 600);
+            let containerH = rect.height || 380;
+            let w = containerW - 16; let h = w * (700 / 600);
+            if (h > containerH - 16 && containerH > 32) { h = containerH - 16; w = h * (600 / 700); }
+            w = Math.max(260, w); h = Math.max(300, h);
+            this.canvas.width = w * dpr; this.canvas.height = h * dpr;
+            this.canvas.style.width = `${w}px`; this.canvas.style.height = `${h}px`;
+            this.scaleX = (w * dpr) / this.width; this.scaleY = (h * dpr) / this.height;
+            this.render();
+        }
+
+        setViewMode(mode) { this.viewMode = mode; this.render(); }
+        setUVMode(on) { this.uvLightOn = on; this.render(); }
+        setActiveZone(zoneKey) { this.activeZone = zoneKey; this.render(); }
+
+        getCanonicalZone(x, y) {
+            if (y >= 540 && y <= 670 && x >= 160 && x <= 440) return 'wrist';
+            if ((x >= 110 && x <= 230) && (y >= 330 && y <= 480)) return 'thumb';
+            if ((x >= 370 && x <= 490) && (y >= 330 && y <= 480)) return 'thumb';
+            if (y >= 80 && y <= 165) {
+                if ((x >= 200 && x <= 260) || (x >= 270 && x <= 330) || (x >= 340 && x <= 400) || (x >= 410 && x <= 460)) return 'nails';
+            }
+            if (y >= 165 && y <= 350) {
+                const isGap = (x > 250 && x < 275) || (x > 325 && x < 345) || (x > 395 && x < 415);
+                if (isGap) return 'webbing';
+                if (this.viewMode === 'back' && (y >= 210 && y <= 270)) return 'knuckles';
+            }
+            if (y >= 350 && y <= 540 && x >= 160 && x <= 440) return this.viewMode === 'palm' ? 'palm' : 'back';
+            if (y >= 165 && y <= 350 && x >= 160 && x <= 440) return this.viewMode === 'palm' ? 'palm' : 'back';
+            return null;
+        }
+
+        getZoneAtPoint(x, y) {
+            if (this.activeZone === 'knuckles') return this.getCanonicalZone(x, y);
+            if (x < 300) {
+                const cx = (x - 165) / 0.72 + 300; const cy = (y - 360) / 0.72 + 370;
+                return this.getCanonicalZone(cx, cy);
+            } else {
+                const cx = 300 - (x - 435) / 0.72; const cy = (y - 360) / 0.72 + 370;
+                return this.getCanonicalZone(cx, cy);
+            }
+        }
+
+        generateGermParticles() {
+            this.particles = [];
+            Object.keys(this.zonesData).forEach(k => { this.zonesData[k].count = 0; this.zonesData[k].cleared = 0; });
+            const countPerHand = 320; let particleId = 0;
+            for (let i = 0; i < countPerHand; i++) {
+                const cx = 110 + Math.random() * 380; const cy = 80 + Math.random() * 580;
+                const zone = this.getCanonicalZone(cx, cy);
+                if (zone) {
+                    const px = (cx - 300) * 0.72 + 165; const py = (cy - 370) * 0.72 + 360;
+                    this.particles.push({ id: particleId++, x: px, y: py, size: 3 + Math.random() * 5.5, zone: zone, active: true, glowOffset: Math.random() * Math.PI * 2, colorType: Math.random() > 0.3 ? 'neon-green' : 'neon-cyan' });
+                    this.zonesData[zone].count++;
+                }
+            }
+            for (let i = 0; i < countPerHand; i++) {
+                const cx = 110 + Math.random() * 380; const cy = 80 + Math.random() * 580;
+                const zone = this.getCanonicalZone(cx, cy);
+                if (zone) {
+                    const px = 435 - (cx - 300) * 0.72; const py = (cy - 370) * 0.72 + 360;
+                    this.particles.push({ id: particleId++, x: px, y: py, size: 3 + Math.random() * 5.5, zone: zone, active: true, glowOffset: Math.random() * Math.PI * 2, colorType: Math.random() > 0.3 ? 'neon-green' : 'neon-cyan' });
+                    this.zonesData[zone].count++;
+                }
+            }
+        }
+
+        render() {
+            this.ctx.save();
+            this.ctx.scale(this.scaleX, this.scaleY);
+            this.ctx.clearRect(0, 0, this.width, this.height);
+            this.drawBackground();
+            this.drawHandVector();
+            if (this.uvLightOn) this.drawUVGermParticles();
+            this.ctx.restore();
+        }
+
+        drawBackground() {
+            const bgGrad = this.ctx.createRadialGradient(300, 350, 50, 300, 350, 450);
+            bgGrad.addColorStop(0, this.uvLightOn ? '#0f172a' : '#1e293b');
+            bgGrad.addColorStop(1, this.uvLightOn ? '#030712' : '#0f172a');
+            this.ctx.fillStyle = bgGrad; this.ctx.fillRect(0, 0, this.width, this.height);
+        }
+
+        drawHandVector() {
+            this.ctx.save();
+            const skinGrad = this.ctx.createLinearGradient(150, 100, 450, 600);
+            if (this.uvLightOn) { skinGrad.addColorStop(0, '#312e81'); skinGrad.addColorStop(1, '#0f172a'); }
+            else { skinGrad.addColorStop(0, '#fef08a'); skinGrad.addColorStop(1, '#eab308'); }
+            this.ctx.fillStyle = skinGrad; this.ctx.strokeStyle = this.uvLightOn ? '#38bdf8' : '#ca8a04';
+            this.ctx.lineWidth = 5; this.ctx.lineJoin = 'round'; this.ctx.lineCap = 'round';
+
+            // Left Hand
+            this.ctx.save(); this.ctx.translate(165, 360); this.ctx.scale(0.72, 0.72); this.ctx.translate(-300, -370);
+            this.drawSingleHandPath(); this.ctx.restore();
+
+            // Right Hand
+            this.ctx.save(); this.ctx.translate(435, 360); this.ctx.scale(-0.72, 0.72); this.ctx.translate(-300, -370);
+            this.drawSingleHandPath(); this.ctx.restore();
+
+            this.ctx.restore();
+        }
+
+        drawSingleHandPath() {
+            this.ctx.beginPath();
+            this.ctx.moveTo(210, 670); this.ctx.lineTo(200, 540);
+            this.ctx.quadraticCurveTo(130, 470, 140, 390); this.ctx.quadraticCurveTo(150, 340, 195, 360); this.ctx.quadraticCurveTo(220, 380, 230, 430);
+            this.ctx.lineTo(225, 200); this.ctx.quadraticCurveTo(230, 130, 255, 130); this.ctx.quadraticCurveTo(275, 130, 275, 200);
+            this.ctx.lineTo(290, 160); this.ctx.quadraticCurveTo(295, 90, 325, 90); this.ctx.quadraticCurveTo(350, 90, 350, 160);
+            this.ctx.lineTo(360, 190); this.ctx.quadraticCurveTo(365, 115, 390, 115); this.ctx.quadraticCurveTo(415, 115, 415, 190);
+            this.ctx.lineTo(425, 250); this.ctx.quadraticCurveTo(430, 180, 450, 180); this.ctx.quadraticCurveTo(470, 180, 465, 260);
+            this.ctx.quadraticCurveTo(460, 450, 400, 540); this.ctx.lineTo(390, 670); this.ctx.closePath();
+            this.ctx.fill(); this.ctx.stroke();
+        }
+
+        drawUVGermParticles() {
+            const time = Date.now() * 0.003;
+            this.particles.forEach(p => {
+                if (!p.active) return;
+                if (this.viewMode === 'palm' && p.zone === 'back') return;
+                if (this.viewMode === 'back' && p.zone === 'palm') return;
+                const pulse = Math.sin(time + p.glowOffset) * 1.5;
+                this.ctx.save(); this.ctx.beginPath();
+                this.ctx.arc(p.x, p.y, Math.max(1, p.size + pulse), 0, Math.PI * 2);
+                this.ctx.fillStyle = p.colorType === 'neon-green' ? 'rgba(52, 211, 153, 0.85)' : 'rgba(34, 211, 238, 0.85)';
+                this.ctx.fill(); this.ctx.restore();
+            });
+        }
+
+        bindInputEvents() {
+            const getCoords = (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const touch = (e.touches && e.touches.length > 0) ? e.touches[0] : (e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0] : null);
+                const clientX = touch ? touch.clientX : e.clientX;
+                const clientY = touch ? touch.clientY : e.clientY;
+                if (clientX === undefined || clientY === undefined) return { x: 0, y: 0, clientX: 0, clientY: 0 };
+                const scaleX = rect.width > 0 ? (this.width / rect.width) : 1;
+                const scaleY = rect.height > 0 ? (this.height / rect.height) : 1;
+                return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY, clientX, clientY };
+            };
+            const handleStart = (e) => { this.isRubbing = true; const pos = getCoords(e); this.processScrubAtPoint(pos.x, pos.y, pos.clientX, pos.clientY); };
+            const handleMove = (e) => { if (!this.isRubbing) return; const pos = getCoords(e); this.processScrubAtPoint(pos.x, pos.y, pos.clientX, pos.clientY); };
+            const handleEnd = () => { this.isRubbing = false; };
+
+            this.canvas.addEventListener('mousedown', handleStart);
+            this.canvas.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+
+            this.canvas.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); handleStart(e); }, { passive: false });
+            this.canvas.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); handleMove(e); }, { passive: false });
+            window.addEventListener('touchend', handleEnd, { passive: true });
+            window.addEventListener('touchcancel', handleEnd, { passive: true });
+        }
+
+        processScrubAtPoint(x, y, clientX, clientY) {
+            let zone = this.getZoneAtPoint(x, y);
+            if (!zone) {
+                const offsets = [[-15,0],[15,0],[0,-15],[0,15],[-20,-20],[20,20]];
+                for (const [dx, dy] of offsets) { zone = this.getZoneAtPoint(x + dx, y + dy); if (zone) break; }
+            }
+            if (!zone) return;
+            if (this.onScrubCallback) {
+                const res = this.onScrubCallback(zone, x, y);
+                if (res && res.allowed) {
+                    const scrubRadius = 85; let erased = false;
+                    this.particles.forEach(p => {
+                        if (!p.active) return;
+                        if (Math.hypot(p.x - x, p.y - y) <= scrubRadius && p.zone === zone) {
+                            p.active = false; this.zonesData[zone].cleared++; erased = true;
+                        }
+                    });
+                    if (erased) { this.updateProgress(); this.render(); }
+                }
+            }
+        }
+
+        updateProgress() {
+            let total = 0; let cleared = 0;
+            Object.keys(this.zonesData).forEach(k => { total += this.zonesData[k].count; cleared += this.zonesData[k].cleared; });
+            const percent = total > 0 ? Math.min(100, Math.round((cleared / total) * 100)) : 100;
+            if (this.onProgressUpdateCallback) this.onProgressUpdateCallback(percent, this.zonesData);
+        }
+    }
+    window.HandCanvasEngine = HandCanvasEngine;
+
+    /* Main App Controller */
+    window.gameStarted = false; window.easyMode = false; window.selectedDuration = 45; window.timerSeconds = 45;
+    window.currentStepId = 1; window.cleanPercent = 0; window.completedSteps = new Set();
+    let canvasEngine = null;
+
+    function initGameApp() {
+        if (window.gameAppInitialized) return;
+        window.gameAppInitialized = true;
+        try {
+            canvasEngine = new HandCanvasEngine('hand-canvas', 'canvas-container');
+            window.canvasEngine = canvasEngine;
+            canvasEngine.onScrubCallback = (zk) => {
+                if (!window.gameStarted) window.startGame();
+                if (window.sounds) window.sounds.playScrubSound();
+                if (window.easyMode) return { allowed: true };
+                const allowed = isZoneAllowedInStep(zk, window.currentStepId, false);
+                if (!allowed) {
+                    if (window.sounds) window.sounds.playWarningSound();
+                    window.showFeedback(getStepWarningMessage(zk), true);
+                    return { allowed: false };
+                }
+                return { allowed: true };
+            };
+            canvasEngine.onProgressUpdateCallback = (percent, zd) => {
+                window.cleanPercent = percent;
+                const txt = document.getElementById('clean-percent-text');
+                const bar = document.getElementById('clean-bar');
+                if (txt) txt.textContent = `${percent}%`;
+                if (bar) bar.style.width = `${percent}%`;
+                Object.keys(zd).forEach(zk => {
+                    const d = zd[zk];
+                    if (d && d.count > 0 && (d.cleared / d.count) >= 0.30) {
+                        window.markStepCompleted(getStepIdForZone(zk));
+                    }
+                });
+                if (window.cleanPercent >= 100 && window.gameStarted) window.endGame(true);
+            };
+        } catch (e) {}
+
+        window.hideResultModal();
+        window.hideHelpModal();
+    }
+
+    window.startGame = function(initialStep = 1) {
+        try {
+            window.gameStarted = true;
+            window.timerSeconds = window.selectedDuration;
+            window.cleanPercent = 0;
+            if (window.completedSteps) window.completedSteps.clear();
+
+            const overlay = document.getElementById('start-overlay');
+            if (overlay) {
+                overlay.style.cssText = 'display: none !important; opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; z-index: -10 !important;';
+                overlay.classList.add('hidden-modal', 'hidden');
+            }
+
+            if (canvasEngine) {
+                canvasEngine.initCanvasSize();
+                canvasEngine.generateGermParticles();
+                canvasEngine.render();
+            }
+
+            window.updateTimerDisplay();
+            clearInterval(window.timerInterval);
+            if (window.selectedDuration > 0) {
+                window.timerInterval = setInterval(() => {
+                    window.timerSeconds--;
+                    window.updateTimerDisplay();
+                    if (window.timerSeconds <= 0) window.endGame(false);
+                }, 1000);
+            }
+            window.selectStep(initialStep);
+        } catch (e) {}
+    };
+
+    window.endGame = function(isPerfect = false) {
+        window.gameStarted = false;
+        clearInterval(window.timerInterval);
+        if (isPerfect && window.sounds) window.sounds.playVictorySound();
+        window.showResults();
+    };
+
+    window.updateTimerDisplay = function() {
+        const txt = document.getElementById('timer-text');
+        const ring = document.getElementById('timer-progress-ring');
+        if (!txt || !ring) return;
+        if (window.selectedDuration === 0) {
+            txt.textContent = '∞'; ring.style.strokeDashoffset = 0; return;
+        }
+        txt.textContent = window.timerSeconds;
+        const totalDash = 106.8;
+        ring.style.strokeDashoffset = totalDash - (window.timerSeconds / window.selectedDuration) * totalDash;
+    };
+
+    window.selectStep = function(stepId) {
+        window.currentStepId = parseInt(stepId, 10);
+        const config = HANDWASHING_STEPS[window.currentStepId];
+        if (!config) return;
+        if (config.requiredView === 'back' && canvasEngine && canvasEngine.viewMode !== 'back') window.switchViewMode('back');
+        else if (config.requiredView === 'palm' && canvasEngine && canvasEngine.viewMode !== 'palm') window.switchViewMode('palm');
+        if (canvasEngine) canvasEngine.setActiveZone(config.targetZone);
+
+        document.querySelectorAll('.step-btn').forEach(btn => {
+            if (btn && btn.getAttribute) {
+                if (parseInt(btn.getAttribute('data-step'), 10) === window.currentStepId) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+        });
+        const badge = document.getElementById('step-badge');
+        const title = document.getElementById('step-title');
+        const desc = document.getElementById('step-desc');
+        const target = document.getElementById('step-target-tag');
+        if (badge) badge.textContent = config.id;
+        if (title) title.textContent = config.title;
+        if (desc) desc.textContent = config.desc;
+        if (target) target.textContent = `Target: ${config.targetLabel}`;
+        if (window.sounds) window.sounds.playSwitchSound();
+    };
+
+    window.markStepCompleted = function(stepId) {
+        if (!window.completedSteps.has(stepId)) {
+            window.completedSteps.add(stepId);
+            const btn = document.querySelector(`.step-btn[data-step="${stepId}"]`);
+            if (btn) btn.classList.add('completed');
+            if (window.sounds) window.sounds.playStepChime();
+        }
+    };
+
+    window.showFeedback = function(msg, isWarn) {
+        const bub = document.getElementById('feedback-bubble');
+        const txt = document.getElementById('feedback-bubble-text');
+        if (!bub || !txt) return;
+        txt.textContent = msg;
+        bub.className = `absolute top-4 left-1/2 transform -translate-x-1/2 ${isWarn ? 'bg-amber-500/90 text-slate-900 border-amber-300 shake-bubble' : 'bg-emerald-500/90 text-white border-emerald-300'} px-4 py-2 rounded-full font-bold text-xs shadow-xl flex items-center gap-2 border opacity-100 transition-all duration-300 z-30`;
+        clearTimeout(window.feedbackTimeout);
+        window.feedbackTimeout = setTimeout(() => bub.classList.add('opacity-0'), 2200);
+    };
+
+    window.switchViewMode = function(m) {
+        if (canvasEngine) canvasEngine.setViewMode(m);
+        const pBtn = document.getElementById('view-palm-btn');
+        const bBtn = document.getElementById('view-back-btn');
+        if (m === 'palm') {
+            if (pBtn) pBtn.className = 'px-3 py-1.5 rounded-md font-bold transition bg-cyan-600 text-white shadow';
+            if (bBtn) bBtn.className = 'px-3 py-1.5 rounded-md font-bold transition text-slate-400 hover:text-white';
+        } else {
+            if (bBtn) bBtn.className = 'px-3 py-1.5 rounded-md font-bold transition bg-cyan-600 text-white shadow';
+            if (pBtn) pBtn.className = 'px-3 py-1.5 rounded-md font-bold transition text-slate-400 hover:text-white';
+        }
+    };
+
+    window.toggleUV = function() {
+        if (!canvasEngine) return;
+        const isON = canvasEngine.uvLightOn; canvasEngine.setUVMode(!isON);
+        const txt = document.getElementById('uv-status-text');
+        if (txt) { txt.textContent = !isON ? 'ON' : 'OFF'; txt.className = !isON ? 'text-emerald-400' : 'text-rose-400'; }
+        if (window.sounds) window.sounds.playSwitchSound();
+    };
+
+    window.toggleSound = function() {
+        if (!window.sounds) return;
+        const enabled = window.sounds.toggleSound();
+        const icon = document.getElementById('sound-icon');
+        if (icon) icon.className = enabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-rose-400';
+    };
+
+    window.toggleEasyMode = function() {
+        window.easyMode = !window.easyMode;
+        const txt = document.getElementById('easy-mode-status-text');
+        const btn = document.getElementById('easy-mode-btn');
+        if (window.easyMode) {
+            if (txt) { txt.textContent = '✨ 쉬운 모드 (자유 문지르기)'; txt.className = 'text-amber-300'; }
+            window.showFeedback('✨ 쉬운 모드: 어디든 문지르면 세균이 지워집니다!', false);
+        } else {
+            if (txt) { txt.textContent = '🎯 6단계 실습 모드'; txt.className = 'text-cyan-300'; }
+            window.showFeedback('🎯 6단계 실습 모드: 6단계를 순서대로 선택하여 닦으세요!', false);
+        }
+        if (window.sounds) window.sounds.playSwitchSound();
+    };
+
+    window.setTimeDuration = function(d) {
+        window.selectedDuration = parseInt(d, 10);
+        window.timerSeconds = window.selectedDuration;
+        document.querySelectorAll('.time-select-btn').forEach(btn => {
+            const t = parseInt(btn.getAttribute('data-time'), 10);
+            btn.className = (t === window.selectedDuration) ? 'time-select-btn active px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-600 text-white' : 'time-select-btn px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700 text-slate-300 hover:bg-slate-600';
+        });
+        window.updateTimerDisplay();
+    };
+
+    window.showResults = function() {
+        const modal = document.getElementById('result-modal');
+        const rate = document.getElementById('final-clean-rate');
+        const list = document.getElementById('final-zone-list');
+        if (rate) rate.textContent = `${window.cleanPercent}%`;
+        if (list && canvasEngine) {
+            list.innerHTML = '';
+            Object.keys(canvasEngine.zonesData).forEach(k => {
+                const zd = canvasEngine.zonesData[k];
+                const r = zd.count > 0 ? Math.round((zd.cleared / zd.count) * 100) : 100;
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-700/60';
+                item.innerHTML = `<span>${zd.label}</span><span class="${r >= 50 ? 'text-emerald-400 font-bold' : 'text-amber-400'}">${r}% 제거</span>`;
+                list.appendChild(item);
+            });
+        }
+        if (modal) { modal.style.display = 'flex'; modal.classList.remove('hidden-modal'); modal.classList.add('show-modal'); }
+    };
+
+    window.hideResultModal = function() {
+        const modal = document.getElementById('result-modal');
+        if (modal) { modal.style.display = 'none'; modal.classList.add('hidden-modal'); }
+    };
+
+    window.showHelpModal = function() {
+        const modal = document.getElementById('help-modal');
+        if (modal) { modal.style.display = 'flex'; modal.classList.remove('hidden-modal'); modal.classList.add('show-modal'); }
+    };
+
+    window.hideHelpModal = function() {
+        const modal = document.getElementById('help-modal');
+        if (modal) { modal.style.display = 'none'; modal.classList.add('hidden-modal'); }
+    };
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        initGameApp();
+    } else {
+        document.addEventListener('DOMContentLoaded', initGameApp);
+        window.addEventListener('load', initGameApp);
+    }
+    </script>
 </body>
 </html>
