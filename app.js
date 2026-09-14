@@ -123,7 +123,14 @@ window.setTimeDuration = function(duration) {
     window.updateTimerDisplay();
 };
 
+let lastStartCallTime = 0;
 window.startGame = function(initialStep = 1) {
+    const now = Date.now();
+    if (window.gameStarted && (now - lastStartCallTime < 400)) {
+        return;
+    }
+    lastStartCallTime = now;
+
     try {
         window.gameStarted = true;
         window.timerSeconds = window.selectedDuration;

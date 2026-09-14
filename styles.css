@@ -13,9 +13,14 @@
     user-select: none;
 }
 
-#canvas-container {
-    touch-action: none;
-    -webkit-touch-callout: none;
+#hand-canvas {
+    touch-action: none !important;
+    -webkit-touch-callout: none !important;
+}
+
+#start-overlay, #start-overlay * {
+    touch-action: manipulation !important;
+    pointer-events: auto !important;
 }
 
 /* Modal Explicit Visibility Controls (Prevents click blocking) */

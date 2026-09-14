@@ -121,7 +121,7 @@
                 <div id="bubble-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
 
                 <!-- SINGLE Center Start Overlay Button (가운데 유일한 실습 시작 버튼) -->
-                <div id="start-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-4 sm:p-6 text-center">
+                <div id="start-overlay" onclick="window.startGame()" ontouchend="window.startGame()" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-4 sm:p-6 text-center cursor-pointer">
                     <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mb-2 sm:mb-3 text-2xl sm:text-3xl animate-bounce">
                         <i class="fa-solid fa-hand-sparkles"></i>
                     </div>
@@ -129,7 +129,7 @@
                     <p class="text-[11px] sm:text-xs text-slate-300 max-w-md mb-4 sm:mb-6 leading-relaxed">
                         올바른 손씻기 6단계를 선택하고 구석구석 세균을 지워보세요!
                     </p>
-                    <button id="overlay-start-btn" onclick="window.startGame()" class="px-6 py-2.5 sm:px-8 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-cyan-500/30 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 font-jua cursor-pointer">
+                    <button id="overlay-start-btn" onclick="event.stopPropagation(); window.startGame();" ontouchend="event.stopPropagation(); window.startGame();" class="px-6 py-2.5 sm:px-8 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-cyan-500/30 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 font-jua cursor-pointer">
                         <i class="fa-solid fa-play"></i> <span id="overlay-start-btn-text">45초 실습 시작하기</span>
                     </button>
                 </div>
