@@ -124,41 +124,49 @@ window.setTimeDuration = function(duration) {
 };
 
 window.startGame = function(initialStep = 1) {
-    window.gameStarted = true;
-    window.timerSeconds = window.selectedDuration;
-    window.cleanPercent = 0;
-    window.completedSteps.clear();
+    try {
+        window.gameStarted = true;
+        window.timerSeconds = window.selectedDuration;
+        window.cleanPercent = 0;
+        window.completedSteps.clear();
 
-    const startOverlay = document.getElementById('start-overlay');
-    const startBtnLabel = document.getElementById('start-btn-label');
-    const stepBtns = document.querySelectorAll('.step-btn');
+        const startOverlay = document.getElementById('start-overlay');
+        const startBtnLabel = document.getElementById('start-btn-label');
+        const stepBtns = document.querySelectorAll('.step-btn');
 
-    if (startOverlay) startOverlay.style.display = 'none';
-    if (startBtnLabel) startBtnLabel.textContent = '실습 재시작';
-    window.hideResultModal();
+        if (startOverlay) {
+            startOverlay.style.display = 'none';
+            startOverlay.classList.add('hidden-modal');
+        }
+        if (startBtnLabel) startBtnLabel.textContent = '실습 재시작';
+        window.hideResultModal();
 
-    stepBtns.forEach(btn => btn.classList.remove('completed'));
+        stepBtns.forEach(btn => btn.classList.remove('completed'));
 
-    if (canvasEngine) {
-        canvasEngine.generateGermParticles();
-        canvasEngine.render();
+        if (canvasEngine) {
+            canvasEngine.initCanvasSize();
+            canvasEngine.generateGermParticles();
+            canvasEngine.render();
+        }
+
+        window.updateTimerDisplay();
+
+        clearInterval(window.timerInterval);
+        if (window.selectedDuration > 0) {
+            window.timerInterval = setInterval(() => {
+                window.timerSeconds--;
+                window.updateTimerDisplay();
+
+                if (window.timerSeconds <= 0) {
+                    window.endGame(false);
+                }
+            }, 1000);
+        }
+
+        window.selectStep(initialStep);
+    } catch (err) {
+        console.error('Error starting game:', err);
     }
-
-    window.updateTimerDisplay();
-
-    clearInterval(window.timerInterval);
-    if (window.selectedDuration > 0) {
-        window.timerInterval = setInterval(() => {
-            window.timerSeconds--;
-            window.updateTimerDisplay();
-
-            if (window.timerSeconds <= 0) {
-                window.endGame(false);
-            }
-        }, 1000);
-    }
-
-    window.selectStep(initialStep);
 };
 
 window.endGame = function(isPerfect = false) {
