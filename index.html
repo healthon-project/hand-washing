@@ -107,7 +107,7 @@
             </div>
 
             <!-- Interactive Canvas Area -->
-            <div class="relative flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80 flex items-center justify-center group shadow-inner" id="canvas-container">
+            <div class="relative flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80 flex items-center justify-center group shadow-inner min-h-[350px] sm:min-h-[420px]" id="canvas-container">
                 <!-- UV Canvas -->
                 <canvas id="hand-canvas" class="eraser-cursor transition-transform duration-100 max-w-full max-h-full object-contain"></canvas>
 
@@ -121,15 +121,15 @@
                 <div id="bubble-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
 
                 <!-- SINGLE Center Start Overlay Button (가운데 유일한 실습 시작 버튼) -->
-                <div id="start-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center">
-                    <div class="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mb-3 text-3xl animate-bounce">
+                <div id="start-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-4 sm:p-6 text-center">
+                    <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mb-2 sm:mb-3 text-2xl sm:text-3xl animate-bounce">
                         <i class="fa-solid fa-hand-sparkles"></i>
                     </div>
-                    <h2 class="text-2xl font-black font-jua text-white mb-2">손씻기 UV 형광 세균 실습</h2>
-                    <p class="text-xs text-slate-300 max-w-md mb-6 leading-relaxed">
+                    <h2 class="text-xl sm:text-2xl font-black font-jua text-white mb-1.5 sm:mb-2">손씻기 UV 형광 세균 실습</h2>
+                    <p class="text-[11px] sm:text-xs text-slate-300 max-w-md mb-4 sm:mb-6 leading-relaxed">
                         올바른 손씻기 6단계를 선택하고 구석구석 세균을 지워보세요!
                     </p>
-                    <button id="overlay-start-btn" onclick="window.startGame()" class="px-8 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-cyan-500/30 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 font-jua cursor-pointer">
+                    <button id="overlay-start-btn" onclick="window.startGame()" class="px-6 py-2.5 sm:px-8 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-cyan-500/30 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 font-jua cursor-pointer">
                         <i class="fa-solid fa-play"></i> <span id="overlay-start-btn-text">45초 실습 시작하기</span>
                     </button>
                 </div>
@@ -159,7 +159,7 @@
                     </span>
                 </h3>
 
-                <div class="grid grid-cols-1 gap-2" id="steps-grid">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2" id="steps-grid">
                     <!-- Step 1 Button -->
                     <button data-step="1" onclick="window.gameStarted ? window.selectStep(1) : window.startGame(1)" class="step-btn active p-2.5 rounded-xl border border-cyan-500/50 bg-cyan-950/40 hover:bg-slate-700/80 transition text-left flex items-center justify-between group cursor-pointer">
                         <div class="flex items-center space-x-3">
@@ -311,9 +311,9 @@
     </div>
 
     <!-- JavaScript Files with Cache Busting -->
-    <script src="js/audio.js?v=1.0.8"></script>
-    <script src="js/steps.js?v=1.0.8"></script>
-    <script src="js/canvas.js?v=1.0.8"></script>
-    <script src="js/app.js?v=1.0.8"></script>
+    <script src="js/audio.js?v=1.0.9"></script>
+    <script src="js/steps.js?v=1.0.9"></script>
+    <script src="js/canvas.js?v=1.0.9"></script>
+    <script src="js/app.js?v=1.0.9"></script>
 </body>
 </html>

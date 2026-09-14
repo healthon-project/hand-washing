@@ -35,21 +35,40 @@ class HandCanvasEngine {
 
         this.initCanvasSize();
         window.addEventListener('resize', () => this.initCanvasSize());
-        this.bindInputEvents();
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.initCanvasSize(), 150);
+        });
+        requestAnimationFrame(() => this.initCanvasSize());
     }
 
     initCanvasSize() {
+        if (!this.container || !this.canvas) return;
         const rect = this.container.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
 
-        // Maintain 600x700 aspect ratio
-        let w = rect.width - 16;
+        let containerW = rect.width;
+        let containerH = rect.height;
+
+        // Fallbacks if container bounds are 0 or uncalculated during initial DOM load
+        if (!containerW || containerW <= 0) {
+            containerW = Math.min(window.innerWidth - 32, 600);
+        }
+        if (!containerH || containerH <= 0) {
+            containerH = 380;
+        }
+
+        // Maintain 600x700 aspect ratio safely
+        let w = containerW - 16;
         let h = w * (700 / 600);
 
-        if (h > rect.height - 16) {
-            h = rect.height - 16;
+        if (h > containerH - 16 && containerH > 32) {
+            h = containerH - 16;
             w = h * (600 / 700);
         }
+
+        // Prevent collapse on small/mobile screens
+        w = Math.max(260, w);
+        h = Math.max(300, h);
 
         this.canvas.width = w * dpr;
         this.canvas.height = h * dpr;
@@ -565,11 +584,22 @@ class HandCanvasEngine {
     bindInputEvents() {
         const getCanvasCoords = (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const touch = (e.touches && e.touches.length > 0)
+                ? e.touches[0]
+                : (e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0] : null);
 
-            const x = (clientX - rect.left) * (this.width / rect.width);
-            const y = (clientY - rect.top) * (this.height / rect.height);
+            const clientX = touch ? touch.clientX : e.clientX;
+            const clientY = touch ? touch.clientY : e.clientY;
+
+            if (clientX === undefined || clientY === undefined) {
+                return { x: 0, y: 0, clientX: 0, clientY: 0 };
+            }
+
+            const scaleX = rect.width > 0 ? (this.width / rect.width) : 1;
+            const scaleY = rect.height > 0 ? (this.height / rect.height) : 1;
+
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
             return { x, y, clientX, clientY };
         };
 
@@ -594,30 +624,39 @@ class HandCanvasEngine {
         window.addEventListener('mouseup', handleEnd);
 
         this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
             handleStart(e);
         }, { passive: false });
 
         this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
             handleMove(e);
         }, { passive: false });
 
-        window.addEventListener('touchend', handleEnd);
+        window.addEventListener('touchend', handleEnd, { passive: true });
+        window.addEventListener('touchcancel', handleEnd, { passive: true });
     }
 
     /**
      * Scrub at (x,y) point and erase particles if zone matches current step
      */
     processScrubAtPoint(x, y, clientX, clientY) {
-        const zone = this.getZoneAtPoint(x, y);
+        let zone = this.getZoneAtPoint(x, y);
+        if (!zone) {
+            // Check slight offset to make touch scrubbing more forgiving on mobile screens
+            const offsets = [[-15, 0], [15, 0], [0, -15], [0, 15], [-20, -20], [20, 20]];
+            for (const [dx, dy] of offsets) {
+                zone = this.getZoneAtPoint(x + dx, y + dy);
+                if (zone) break;
+            }
+        }
         if (!zone) return;
 
         if (this.onScrubCallback) {
             const result = this.onScrubCallback(zone, x, y);
             if (result && result.allowed) {
-                // Scrub radius 80px (very easy to clean)
-                const scrubRadius = 80;
+                // Scrub radius 85px (generous radius for mobile touch & desktop)
+                const scrubRadius = 85;
                 let erasedAny = false;
 
                 this.particles.forEach(p => {

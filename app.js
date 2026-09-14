@@ -80,6 +80,13 @@ function initGameApp() {
     window.hideHelpModal();
     canvasEngine.setViewMode('palm');
     canvasEngine.setActiveZone(HANDWASHING_STEPS[1].targetZone);
+
+    setTimeout(() => {
+        if (canvasEngine) canvasEngine.initCanvasSize();
+    }, 100);
+    setTimeout(() => {
+        if (canvasEngine) canvasEngine.initCanvasSize();
+    }, 400);
 }
 
 // Global UI Action Methods attached to Window
