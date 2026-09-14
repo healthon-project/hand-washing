@@ -137,19 +137,12 @@ window.setTimeDuration = function(duration) {
     window.updateTimerDisplay();
 };
 
-let lastStartCallTime = 0;
 window.startGame = function(initialStep = 1) {
-    const now = Date.now();
-    if (window.gameStarted && (now - lastStartCallTime < 400)) {
-        return;
-    }
-    lastStartCallTime = now;
-
     try {
         window.gameStarted = true;
         window.timerSeconds = window.selectedDuration;
         window.cleanPercent = 0;
-        window.completedSteps.clear();
+        if (window.completedSteps) window.completedSteps.clear();
 
         const startOverlay = document.getElementById('start-overlay');
         const startBtnLabel = document.getElementById('start-btn-label');
@@ -162,7 +155,11 @@ window.startGame = function(initialStep = 1) {
         if (startBtnLabel) startBtnLabel.textContent = '실습 재시작';
         window.hideResultModal();
 
-        stepBtns.forEach(btn => btn.classList.remove('completed'));
+        if (stepBtns) {
+            stepBtns.forEach(btn => {
+                if (btn && btn.classList) btn.classList.remove('completed');
+            });
+        }
 
         if (canvasEngine) {
             canvasEngine.initCanvasSize();
@@ -243,13 +240,19 @@ window.selectStep = function(stepId) {
     }
 
     const stepBtns = document.querySelectorAll('.step-btn');
-    stepBtns.forEach(btn => {
-        if (parseInt(btn.getAttribute('data-step'), 10) === window.currentStepId) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
+    if (stepBtns) {
+        try {
+            stepBtns.forEach(btn => {
+                if (btn && typeof btn.getAttribute === 'function') {
+                    if (parseInt(btn.getAttribute('data-step'), 10) === window.currentStepId) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+        } catch (e) {}
+    }
 
     const stepBadge = document.getElementById('step-badge');
     const stepTitle = document.getElementById('step-title');
